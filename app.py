@@ -1,15 +1,8 @@
-# Montamos Drive con:
-from google.colab import drive
-drive.mount('/content/drive')
-
 # 🔁 Librerías necesarias
 import pandas as pd
 
-# 📂 Cargar archivo
-file_path = "/content/drive/MyDrive/MASTER PYTHON/TFM/FBREF_players_2223.csv"
-
 # 🧾 Cargar DataFrame
-df = pd.read_csv(file_path, sep=';')
+df = pd.read_csv("/Users/paulamartinez/Desktop/TFM_Scouting_jugadores_futbol/data/FBREF_players_2223.csv")
 df.head()
 
 # Dimensiones
@@ -181,7 +174,6 @@ joblib.dump(rf_model, 'modelo_random_forest_TFM.pkl')
 # Cargar el modelo entrenado
 loaded_model = joblib.load('modelo_random_forest_TFM.pkl')
 
-!pip install streamlit
 
 import streamlit as st
 
@@ -215,7 +207,6 @@ if st.session_state.logged_in:
 else:
     login()
 
-!pip install streamlit pyngrok fpdf
 
 import streamlit as st
 import pandas as pd
