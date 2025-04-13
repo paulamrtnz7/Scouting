@@ -2,7 +2,7 @@
 import pandas as pd
 
 # 🧾 Cargar DataFrame
-df = pd.read_csv("/Users/paulamartinez/Desktop/TFM_Scouting_jugadores_futbol/data/FBREF_players_2223.csv")
+df = pd.read_csv("/Users/paulamartinez/Desktop/Scouting/data/FBREF_players_2223.csv")
 df.head()
 
 # Dimensiones
