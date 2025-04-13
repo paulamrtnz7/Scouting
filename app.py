@@ -1,3 +1,222 @@
+# Montamos Drive con:
+from google.colab import drive
+drive.mount('/content/drive')
+
+# 🔁 Librerías necesarias
+import pandas as pd
+
+# 📂 Cargar archivo
+file_path = "/content/drive/MyDrive/MASTER PYTHON/TFM/FBREF_players_2223.csv"
+
+# 🧾 Cargar DataFrame
+df = pd.read_csv(file_path, sep=';')
+df.head()
+
+# Dimensiones
+print(f"Filas: {df.shape[0]}, Columnas: {df.shape[1]}")
+
+# Columnas
+print("Columnas:")
+print(df.columns.tolist())
+
+# Tipos de datos
+df.info()
+
+df['Pos'] = df['Pos'].astype('category')  # Asegura que 'Pos' sea categórico
+
+# Limpiar las posiciones de los jugadores
+df['Pos'] = df['Pos'].apply(lambda x: x[:2] if len(x) > 2 else x)
+
+# Verificamos que las transformaciones se hayan realizado correctamente
+df.head()
+
+# Renombrar algunas columnas para hacerlas más manejables
+df.rename(columns={
+    'Gls': 'Goles',
+    'Ast': 'Asistencias',
+    'xG': 'Goles_esperados',
+    'xAG': 'Asistencias_esperadas',
+    'Gls/90': 'Goles_por_90',
+    'Ast/90': 'Asistencias_por_90',
+    'xG/90': 'Goles_esperados_por_90',
+    'xAG/90': 'Goles_asistidos_esperados_por_90',
+    'Passes%': 'Pases_completados%',
+    'Dribbles%': 'Regates_completados%',
+    'TklW/90': 'Tackles_ganados_por_90',
+    'Int/90': 'Intercepciones_por_90',
+    'SCA/90': 'Acciones_contribuyendo_a_disparo_por_90',
+    'GCA/90': 'Acciones_contribuyendo_a_gol_por_90',
+    'Aerial%': 'Duelos_aereos_ganados%',
+    'PassesCompleted/90': 'Pases_completados_por_90',
+    'KP/90': 'Pases_clave_por_90',
+    'xA/90': 'Asistencias_esperadas_por_90'
+}, inplace=True)
+
+# Verificar valores nulos
+df.isnull().sum()
+
+# Creación de métricas derivadas
+df['Eficiencia_goles'] = df['Goles'] / df['Goles_esperados']  # Eficiencia de goles
+df['Eficiencia_asistencias'] = df['Asistencias'] / df['Asistencias_esperadas']  # Eficiencia de asistencias
+df['Participación_ofensiva'] = df['Goles'] + df['Asistencias']  # Participación total en goles y asistencias
+df['Contribución_defensiva'] = df['Tackles_ganados_por_90'] + df['Intercepciones_por_90']  # Contribución defensiva
+
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# Distribución de goles
+plt.figure(figsize=(10, 6))
+sns.histplot(df['Goles'], kde=True)
+plt.title('Distribución de Goles')
+plt.show()
+
+# Distribución de asistencias
+plt.figure(figsize=(10, 6))
+sns.histplot(df['Asistencias'], kde=True)
+plt.title('Distribución de Asistencias')
+plt.show()
+
+# Boxplot de goles por posición
+plt.figure(figsize=(10, 6))
+sns.boxplot(x=df['Pos'], y=df['Goles'])
+plt.title('Distribución de Goles por Posición')
+plt.show()
+
+# Scatter Plot entre Goles y Goles esperados
+sns.scatterplot(x='Goles_esperados', y='Goles', data=df)
+plt.title('Relación entre Goles y Goles Esperados')
+plt.xlabel('Goles Esperados (xG)')
+plt.ylabel('Goles Anotados (Gls)')
+plt.show()
+
+# Distribución de la edad
+plt.figure(figsize=(10, 6))
+sns.histplot(df['Age'], kde=True)
+plt.title('Distribución de Edad')
+plt.show()
+
+# Características (X) y Etiqueta (y)
+X = df[['Age', 'Goles', 'Asistencias', 'Goles_esperados', 'Asistencias_esperadas',
+        'Goles_por_90', 'Asistencias_por_90', 'Goles_esperados_por_90', 'Asistencias_esperadas_por_90',
+        'Pases_completados%', 'Regates_completados%', 'Tackles_ganados_por_90', 'Intercepciones_por_90',
+        'Acciones_contribuyendo_a_gol_por_90', 'Acciones_contribuyendo_a_disparo_por_90', 'Duelos_aereos_ganados%',
+        'Pases_completados_por_90', 'Pases_clave_por_90']]
+
+y = df['Pos']  # Etiqueta
+
+# Dividir el dataset en entrenamiento y prueba
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+# Escalar las características
+from sklearn.preprocessing import StandardScaler
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
+
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# Crear el modelo Random Forest
+rf_model = RandomForestClassifier(random_state=42)
+
+# Entrenar el modelo
+rf_model.fit(X_train, y_train)
+
+# Hacer predicciones
+y_pred_rf = rf_model.predict(X_test)
+
+# Evaluar el modelo
+print(f"Accuracy de Random Forest: {accuracy_score(y_test, y_pred_rf):.4f}")
+print("Reporte de clasificación (Random Forest):")
+print(classification_report(y_test, y_pred_rf))
+
+# Matriz de confusión
+cm = confusion_matrix(y_test, y_pred_rf)
+plt.figure(figsize=(10, 6))
+sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", xticklabels=df['Pos'].unique(), yticklabels=df['Pos'].unique())
+plt.title('Matriz de Confusión - Random Forest')
+plt.xlabel('Predicción')
+plt.ylabel('Real')
+plt.show()
+
+# Obtener la importancia de las características
+feature_importances = rf_model.feature_importances_
+feature_names = X.columns
+
+# Crear un DataFrame de importancia de características
+feature_df = pd.DataFrame({'Característica': feature_names, 'Importancia': feature_importances})
+feature_df = feature_df.sort_values(by='Importancia', ascending=False)
+
+# Graficar la importancia de las características
+plt.figure(figsize=(10, 6))
+sns.barplot(x='Importancia', y='Característica', data=feature_df)
+plt.title('Importancia de Características - Random Forest')
+plt.show()
+
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+
+# Realizar predicciones
+y_pred = rf_model.predict(X_test)
+
+# Evaluar precisión
+accuracy = accuracy_score(y_test, y_pred)
+print(f'Accuracy: {accuracy:.4f}')
+
+# Reporte completo de clasificación
+print("\nClassification Report:")
+print(classification_report(y_test, y_pred))
+
+# Matriz de confusión
+print("\nConfusion Matrix:")
+print(confusion_matrix(y_test, y_pred))
+
+import joblib
+
+# Guardar el modelo entrenado
+joblib.dump(rf_model, 'modelo_random_forest_TFM.pkl')
+
+# Cargar el modelo entrenado
+loaded_model = joblib.load('modelo_random_forest_TFM.pkl')
+
+!pip install streamlit
+
+import streamlit as st
+
+# Usuario y contraseña predefinidos
+USUARIO_VALIDO = 'admin'
+CONTRASENA_VALIDA = 'proyectopaula'
+
+def login():
+    st.title('Inicio de Sesión')
+
+    # Crear formulario de login
+    usuario = st.text_input('Usuario', '')
+    contrasena = st.text_input('Contraseña', '', type='password')
+
+    # Verificar si los datos son correctos
+    if st.button('Iniciar sesión'):
+        if usuario == USUARIO_VALIDO and contrasena == CONTRASENA_VALIDA:
+            st.session_state.logged_in = True
+            st.success('¡Inicio de sesión exitoso!')
+        else:
+            st.session_state.logged_in = False
+            st.error('Usuario o contraseña incorrectos')
+
+# Inicializar el estado de sesión
+if 'logged_in' not in st.session_state:
+    st.session_state.logged_in = False
+
+# Si el usuario está logueado, mostrar la página principal
+if st.session_state.logged_in:
+    st.write("Bienvenido a la aplicación.")
+else:
+    login()
+
+!pip install streamlit pyngrok fpdf
+
 import streamlit as st
 import pandas as pd
 import joblib
